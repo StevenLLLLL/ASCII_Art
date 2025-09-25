@@ -1,5 +1,7 @@
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageEnhance, ImageFilter, ImageDraw, ImageFont
+from pathlib import Path
 import cv2
+from numpy.ma.extras import row_stack
 from tqdm import tqdm
 import numpy
 
@@ -45,11 +47,67 @@ def pixel_to_chars(m):
     return result
 
 
-img = Image.open("test4.jpg")
+def text_to_image(txt_path, out_png, font_path=r"D:\coding\ASCII_Art\Roboto\Roboto-VariableFont_wdth,wght.ttf", font_size=12, fg=(0, 0, 0), bg=(255, 255, 255), line_gap_ratio=0.0):
+    # 读取文本文件
+    lines = Path(txt_path).read_text(encoding="utf-8").splitlines()
+    if not lines:
+        raise RuntimeError("文本文件为空")
+
+    # 准备字体，测量单个字符尺寸
+    font = ImageFont.truetype(font_path, font_size)
+    bbox = font.getbbox("田")
+    cw = max(1, bbox[2] - bbox[0])  # 字符宽度
+    ch = max(1, bbox[3] - bbox[1])  # 字符高度
+
+    # 计算画布尺寸
+    cols = max(len(line) for line in lines)
+    row = len(lines)
+    gap = int(ch * line_gap_ratio)  # 行间距
+    W = cw * cols
+    H = (ch + gap) * row - gap
+
+    # 绘制图像
+    pic = Image.new("RGB", (W, H), bg)
+    draw = ImageDraw.Draw(pic)
+    y = 0
+    for line in lines:
+        draw.text((0, y), line, font=font, fill=fg)
+        y += ch + gap
+
+    # 保存图像
+    pic.save(out_png)
+    print(f"已保存文本图像到 {out_png}")
+
+
+def input_vid(v):
+    """
+    读取视频, 并输出帧数
+    :param v: video name
+    :return:
+    """
+    cap = cv2.VideoCapture(v)
+    if not cap.isOpened():
+        raise RuntimeError("无法打开视频文件")
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 0.0
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
+    print(f"FPS: {fps}, 总帧数: {total}")
+
+    ok, frame = cap.read()
+    if not ok:
+        raise RuntimeError("无法读取视频帧")
+
+    cv2.imwrite('first_frame.jpg', frame)
+    cap.release()
+    print("已保存第一帧为 first_frame.jpg")
+
+
+img = Image.open("first_frame.jpg")
 resizedImg = process_image(img)
 final = pixel_to_chars(resizedImg)
-with open("output2.txt", "w", encoding="utf-8") as f:
-    f.write(final)
+text_to_image("output2.txt", "output2.png", font_size=8, line_gap_ratio=0.2)
+# with open("output2.txt", "w", encoding="utf-8") as f:
+#     f.write(final)
 
 
 
