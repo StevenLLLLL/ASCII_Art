@@ -47,11 +47,11 @@ def pixel_to_chars(m):
     return result
 
 
-def text_to_image(txt_path, out_png, font_path=r"D:\coding\ASCII_Art\Roboto\Roboto-VariableFont_wdth,wght.ttf", font_size=12, fg=(0, 0, 0), bg=(255, 255, 255), line_gap_ratio=0.0):
+def text_to_image(text, out_png, font_path=r"C:\Windows\Fonts\msyh.ttc", font_size=12, fg=(0, 0, 0), bg=(255, 255, 255), line_gap_ratio=0.0):
     # 读取文本文件
-    lines = Path(txt_path).read_text(encoding="utf-8").splitlines()
+    lines = text.splitlines()
     if not lines:
-        raise RuntimeError("文本文件为空")
+        raise RuntimeError("内容为空")
 
     # 准备字体，测量单个字符尺寸
     font = ImageFont.truetype(font_path, font_size)
@@ -74,14 +74,13 @@ def text_to_image(txt_path, out_png, font_path=r"D:\coding\ASCII_Art\Roboto\Robo
         draw.text((0, y), line, font=font, fill=fg)
         y += ch + gap
 
-    # 保存图像
-    pic.save(out_png)
-    print(f"已保存文本图像到 {out_png}")
+    # 直接返回函数
+    return out_png
 
 
-def input_vid(v):
+def process_vid(v):
     """
-    读取视频, 并输出帧数
+    读取视频, 并处理
     :param v: video name
     :return:
     """
@@ -93,21 +92,27 @@ def input_vid(v):
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
     print(f"FPS: {fps}, 总帧数: {total}")
 
-    ok, frame = cap.read()
-    if not ok:
-        raise RuntimeError("无法读取视频帧")
-
-    cv2.imwrite('first_frame.jpg', frame)
+    frame_count = 0
+    while True:
+        ok, frame = cap.read()
+        if not ok:
+            break
+        frame_count += 1
+        if frame_count % 30 == 0:
+            print(f"已读取 {frame_count} 帧")
     cap.release()
-    print("已保存第一帧为 first_frame.jpg")
+    print(f"视频总帧数: {frame_count}")
+
+
+def video_to_ascii(video_path):
+    pass
 
 
 img = Image.open("first_frame.jpg")
 resizedImg = process_image(img)
 final = pixel_to_chars(resizedImg)
-text_to_image("output2.txt", "output2.png", font_size=8, line_gap_ratio=0.2)
-# with open("output2.txt", "w", encoding="utf-8") as f:
-#     f.write(final)
+text_to_image(final, "output2.png", font_size=8, line_gap_ratio=0.2)
+
 
 
 
